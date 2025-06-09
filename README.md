@@ -14,9 +14,25 @@ photo_composition/
   predict.py   - inference script
 ```
 
-## Usage
+## 環境構築
 
-1. Prepare a dataset with the following structure:
+1. Python 3.8 以上がインストールされていることを確認します。
+2. 任意で仮想環境を作成して有効化します。
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. 依存パッケージをインストールします。GPU を使用する場合は PyTorch の公式サイトで案内されているコマンドに読み替えてください。
+
+```bash
+pip install torch torchvision pillow
+```
+
+## 使い方
+
+1. 以下の構造で学習用データセットを用意します。
 
 ```
 <dataset_root>/
@@ -28,17 +44,17 @@ photo_composition/
     ...
 ```
 
-2. Install dependencies (PyTorch and torchvision are required).
-3. Train the model:
+2. 学習を実行します。`<dataset_root>` には上記のディレクトリを指定します。
 
-```
+```bash
 python photo_composition/train.py --data-dir <dataset_root> --epochs 10
 ```
 
-4. Predict composition for a new image:
+3. 学習済みモデルで画像の構図を推定します。
 
-```
+```bash
 python photo_composition/predict.py --model composition_model.pth \
     --class-names rule_of_thirds,centered,diagonal \
     --image path/to/photo.jpg
 ```
+
