@@ -34,11 +34,14 @@ photo_composition/
 ```
 python photo_composition/train.py --data-dir <dataset_root> --epochs 10
 ```
+The command above saves the best model to `composition_model.pth` and
+records the detected class names in `composition_model_classes.json`.
 
 4. Predict composition for a new image:
 
 ```
 python photo_composition/predict.py --model composition_model.pth \
-    --class-names rule_of_thirds,centered,diagonal \
     --image path/to/photo.jpg
 ```
+By default the script reads class names from `composition_model_classes.json`.
+Use `--class-names` to override them.
