@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import json
 
 import torch
 from PIL import Image
@@ -25,7 +26,12 @@ def main(args):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-    class_names = args.class_names.split(',')
+    if args.class_names:
+        class_names = args.class_names.split(',')
+    else:
+        classes_file = args.model.with_name(args.model.stem + "_classes.json")
+        with classes_file.open() as f:
+            class_names = json.load(f)
     model = load_model(args.model, len(class_names), device)
 
     image = Image.open(args.image).convert("RGB")
@@ -41,7 +47,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Predict photo composition")
     parser.add_argument("--model", type=Path, required=True, help="Trained model file")
-    parser.add_argument("--class-names", type=str, required=True, help="Comma-separated list of class names")
+    parser.add_argument("--class-names", type=str, required=False, help="Comma-separated list of class names. If omitted, class names are loaded from <model>_classes.json")
     parser.add_argument("--image", type=Path, required=True, help="Image file to evaluate")
     parser.add_argument("--image-size", type=int, default=224)
     args = parser.parse_args()

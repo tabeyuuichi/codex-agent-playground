@@ -34,3 +34,26 @@ def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 3
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     return train_loader, val_loader, train_dataset.classes
+
+
+def create_test_loader(data_dir: str, image_size: int = 224, batch_size: int = 32, num_workers: int = 4) -> Tuple[DataLoader, list]:
+    """Create a dataloader for a test dataset.
+
+    Args:
+        data_dir: Path to the test dataset directory containing class subfolders.
+        image_size: Resize size for the images.
+        batch_size: Batch size for the dataloader.
+        num_workers: Number of worker processes for data loading.
+
+    Returns:
+        test_loader, class_names
+    """
+    transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+
+    dataset = datasets.ImageFolder(data_dir, transform=transform)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    return loader, dataset.classes

@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import json
 
 import torch
 from torch import nn
@@ -47,6 +48,8 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, val_loader, class_names = create_dataloaders(args.data_dir, args.image_size, args.batch_size)
 
+    classes_file = args.output.with_name(args.output.stem + "_classes.json")
+
     model = CompositionNet(num_classes=len(class_names)).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=args.lr)
@@ -63,6 +66,8 @@ def main(args):
         if val_acc > best_acc:
             best_acc = val_acc
             torch.save(model.state_dict(), args.output)
+            with classes_file.open("w") as f:
+                json.dump(class_names, f)
 
     print(f"Training finished. Best validation accuracy: {best_acc:.4f}")
 

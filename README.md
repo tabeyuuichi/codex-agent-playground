@@ -12,6 +12,7 @@ photo_composition/
   model.py     - `CompositionNet` CNN model based on ResNet18
   train.py     - training script
   predict.py   - inference script
+  evaluate.py  - run inference on a test dataset and report accuracy
 ```
 
 ## Usage
@@ -34,11 +35,24 @@ photo_composition/
 ```
 python photo_composition/train.py --data-dir <dataset_root> --epochs 10
 ```
+The command above saves the best model to `composition_model.pth` and
+records the detected class names in `composition_model_classes.json`.
 
 4. Predict composition for a new image:
 
 ```
 python photo_composition/predict.py --model composition_model.pth \
-    --class-names rule_of_thirds,centered,diagonal \
     --image path/to/photo.jpg
 ```
+By default the script reads class names from `composition_model_classes.json`.
+Use `--class-names` to override them.
+
+5. Evaluate on a test dataset directory:
+
+```
+python photo_composition/evaluate.py --model composition_model.pth \
+    --data-dir path/to/test
+```
+This prints the classification accuracy on the provided dataset. When
+`--class-names` is omitted, the script loads class names from
+`composition_model_classes.json`.
