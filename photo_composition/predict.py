@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 
 import torch
+import pickle
+import numpy as np
 from PIL import Image
 from torchvision import transforms
 
@@ -35,7 +37,9 @@ def main(args):
     model = load_model(args.model, len(class_names), device)
 
     image = Image.open(args.image).convert("RGB")
-    saliency = Image.open(args.saliency).convert("L")
+    with open(args.saliency, "rb") as f:
+        sal_array = pickle.load(f)
+    saliency = Image.fromarray(sal_array.astype(np.uint8)).convert("L")
 
     rgb_tensor = transform(image)
     saliency_tensor = transform(saliency)
