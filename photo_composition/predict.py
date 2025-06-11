@@ -22,10 +22,14 @@ def load_model(model_path: Path, num_classes: int, device: torch.device) -> Comp
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    transform = transforms.Compose([
+    rgb_transform = transforms.Compose([
         transforms.Resize((args.image_size, args.image_size)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    sal_transform = transforms.Compose([
+        transforms.Resize((args.image_size, args.image_size)),
+        transforms.ToTensor(),
     ])
 
     if args.class_names:
@@ -41,8 +45,8 @@ def main(args):
         sal_array = pickle.load(f)
     saliency = Image.fromarray(sal_array.astype(np.uint8)).convert("L")
 
-    rgb_tensor = transform(image)
-    saliency_tensor = transform(saliency)
+    rgb_tensor = rgb_transform(image)
+    saliency_tensor = sal_transform(saliency)
     tensor = torch.cat([rgb_tensor, saliency_tensor], dim=0).unsqueeze(0).to(device)
     with torch.no_grad():
         outputs = model(tensor)

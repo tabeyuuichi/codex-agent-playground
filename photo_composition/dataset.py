@@ -8,7 +8,12 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
 
-def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 32, num_workers: int = 4) -> Tuple[DataLoader, DataLoader, list]:
+def create_dataloaders(
+    data_dir: str,
+    image_size: int = 224,
+    batch_size: int = 32,
+    num_workers: int = 4,
+) -> Tuple[DataLoader, DataLoader, list]:
     """Create training and validation dataloaders.
 
     Args:
@@ -26,10 +31,14 @@ def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 3
     val_dir = os.path.join(data_dir, "val")
 
     # 前処理
-    transform = transforms.Compose([
+    rgb_transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    sal_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
     ])
 
     # クラス一覧取得のため一時的に ImageFolder を使用
@@ -38,8 +47,8 @@ def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 3
     class_names = temp.classes
 
     # ImageFolder は、フォルダ名をラベルとして認識する自動ラベリングクラス
-    train_dataset = FourChannelImageFolder(train_dir, class_to_idx, transform)
-    val_dataset = FourChannelImageFolder(val_dir, class_to_idx, transform)
+    train_dataset = FourChannelImageFolder(train_dir, class_to_idx, rgb_transform, sal_transform)
+    val_dataset = FourChannelImageFolder(val_dir, class_to_idx, rgb_transform, sal_transform)
 
     # DataLoader に変換（バッチ化）
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
@@ -47,7 +56,12 @@ def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 3
 
     return train_loader, val_loader, class_names
 
-def create_test_loader(data_dir: str, image_size: int = 224, batch_size: int = 32, num_workers: int = 4) -> Tuple[DataLoader, list]:
+def create_test_loader(
+    data_dir: str,
+    image_size: int = 224,
+    batch_size: int = 32,
+    num_workers: int = 4,
+) -> Tuple[DataLoader, list]:
     """Create a dataloader for a test dataset.
 
     Args:
@@ -59,27 +73,32 @@ def create_test_loader(data_dir: str, image_size: int = 224, batch_size: int = 3
     Returns:
         test_loader, class_names
     """
-    transform = transforms.Compose([
+    rgb_transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    sal_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
     ])
 
     temp = datasets.ImageFolder(data_dir)
     class_to_idx = temp.class_to_idx
     class_names = temp.classes
 
-    dataset = FourChannelImageFolder(data_dir, class_to_idx, transform)
+    dataset = FourChannelImageFolder(data_dir, class_to_idx, rgb_transform, sal_transform)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     return loader, class_names
 
 
 class FourChannelImageFolder(Dataset):
-    def __init__(self, image_dir, class_to_idx, transform=None):
+    def __init__(self, image_dir, class_to_idx, rgb_transform=None, sal_transform=None):
         self.image_dir = image_dir
         self.saliency_dir = 'saliency'
         self.class_to_idx = class_to_idx  # {class_name: idx}
-        self.transform = transform
+        self.rgb_transform = rgb_transform
+        self.sal_transform = sal_transform
         self.samples = []
         for class_name in os.listdir(image_dir):
             class_path = os.path.join(image_dir, class_name)
@@ -105,9 +124,10 @@ class FourChannelImageFolder(Dataset):
             sal_array = pickle.load(f)
         sal = Image.fromarray(sal_array.astype(np.uint8)).convert("L")  # 1チャネル
 
-        if self.transform:
-            rgb = self.transform(rgb)        # (3, H, W)
-            sal = self.transform(sal)        # (1, H, W)
+        if self.rgb_transform:
+            rgb = self.rgb_transform(rgb)        # (3, H, W)
+        if self.sal_transform:
+            sal = self.sal_transform(sal)        # (1, H, W)
 
         img_4ch = torch.cat([rgb, sal], dim=0)  # (4, H, W)
         return img_4ch, label
