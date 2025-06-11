@@ -4,6 +4,7 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
+from sklearn.metrics import classification_report
 
 from model import CompositionNet
 from dataset import create_test_loader
@@ -17,20 +18,41 @@ def load_model(model_path: Path, num_classes: int, device: torch.device) -> Comp
     return model
 
 
-def evaluate(model: CompositionNet, loader: DataLoader, device: torch.device) -> float:
-    model.eval()
-    correct = 0
-    total = 0
+# def evaluate(model: CompositionNet, loader: DataLoader, device: torch.device) -> float:
+#     model.eval()
+#     correct = 0
+#     total = 0
+#     with torch.no_grad():
+#         for images, labels in loader:
+#             images = images.to(device)
+#             labels = labels.to(device)
+#             outputs = model(images)
+#             preds = outputs.argmax(dim=1)
+#             correct += (preds == labels).sum().item()
+#             total += labels.size(0)
+#     return correct / total if total > 0 else 0.0
+
+
+def evaluate(model, loader, device, class_names=None):
+    all_preds = []
+    all_labels = []
+
     with torch.no_grad():
         for images, labels in loader:
             images = images.to(device)
             labels = labels.to(device)
             outputs = model(images)
             preds = outputs.argmax(dim=1)
-            correct += (preds == labels).sum().item()
-            total += labels.size(0)
-    return correct / total if total > 0 else 0.0
+            all_preds.extend(preds.cpu().tolist())
+            all_labels.extend(labels.cpu().tolist())
 
+    if class_names:
+        report = classification_report(all_labels, all_preds, target_names=class_names)
+    else:
+        report = classification_report(all_labels, all_preds)
+    print(report)
+    accuracy = sum([p == l for p, l in zip(all_preds, all_labels)]) / len(all_preds)
+    return accuracy
 
 def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

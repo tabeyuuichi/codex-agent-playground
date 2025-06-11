@@ -50,19 +50,26 @@ def main(args):
 
     classes_file = args.output.with_name(args.output.stem + "_classes.json")
 
+    # 設定
     model = CompositionNet(num_classes=len(class_names)).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=args.lr)
     scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
 
+    # 検証精度の最高値を記録
     best_acc = 0.0
+    # 指定されたエポック数だけ学習と検証を繰り返す
     for epoch in range(args.epochs):
+        # トレーニングデータに対する学習・損失最小化
         train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device)
+        # 検証データに対する評価
         val_loss, val_acc = evaluate(model, val_loader, criterion, device)
+        # 学習率の更新
         scheduler.step()
 
         print(f"Epoch {epoch+1}/{args.epochs} - train loss: {train_loss:.4f} val loss: {val_loss:.4f} val acc: {val_acc:.4f}")
 
+        # 検証精度が最高値を更新した場合、モデルを保存
         if val_acc > best_acc:
             best_acc = val_acc
             torch.save(model.state_dict(), args.output)
