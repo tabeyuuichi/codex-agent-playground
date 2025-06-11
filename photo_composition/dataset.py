@@ -5,8 +5,6 @@ from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
-from torchvision import transforms
-
 
 def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 32, num_workers: int = 4) -> Tuple[DataLoader, DataLoader, list]:
     """Create training and validation dataloaders.
