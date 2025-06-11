@@ -61,6 +61,8 @@ python photo_composition/train.py --data-dir <dataset_root> --epochs 10
 python photo_composition/predict.py --model composition_model.pth \
     --image path/to/photo.jpg --saliency path/to/photo_saliency.jpg
 ```
+By default the script reads class names from `composition_model_classes.json`.
+Use `--class-names` to override them.
 
 `--class-names` を指定しない場合は、モデルファイル名に対応する `<model>_classes.json` が読み込まれます。RGB 画像とサリエンシーマップを組み合わせた 4 チャネル入力で推論を行います。
 
@@ -77,3 +79,7 @@ python photo_composition/evaluate.py --model composition_model.pth \
 
 `model.py` の `CompositionNet` は ResNet18 をベースにしています。必要に応じて層構成やハイパーパラメータを変更してみてください。
 
+=======
+This prints the classification accuracy on the provided dataset. When
+`--class-names` is omitted, the script loads class names from
+`composition_model_classes.json`.
