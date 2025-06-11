@@ -35,7 +35,11 @@ def main(args):
     model = load_model(args.model, len(class_names), device)
 
     image = Image.open(args.image).convert("RGB")
-    tensor = transform(image).unsqueeze(0).to(device)
+    saliency = Image.open(args.saliency).convert("L")
+
+    rgb_tensor = transform(image)
+    saliency_tensor = transform(saliency)
+    tensor = torch.cat([rgb_tensor, saliency_tensor], dim=0).unsqueeze(0).to(device)
     with torch.no_grad():
         outputs = model(tensor)
         probs = torch.softmax(outputs, dim=1)[0]
@@ -49,6 +53,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=Path, required=True, help="Trained model file")
     parser.add_argument("--class-names", type=str, required=False, help="Comma-separated list of class names. If omitted, class names are loaded from <model>_classes.json")
     parser.add_argument("--image", type=Path, required=True, help="Image file to evaluate")
+    parser.add_argument("--saliency", type=Path, required=True, help="Corresponding saliency map")
     parser.add_argument("--image-size", type=int, default=224)
     args = parser.parse_args()
     main(args)
