@@ -5,8 +5,6 @@ from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
-from torchvision import transforms
-
 
 def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 32, num_workers: int = 4) -> Tuple[DataLoader, DataLoader, list]:
     """Create training and validation dataloaders.
@@ -83,8 +81,13 @@ class FourChannelImageFolder(Dataset):
         self.samples = []
         for class_name in os.listdir(image_dir):
             class_path = os.path.join(image_dir, class_name)
+            if not os.path.isdir(class_path):
+                continue
             for fname in os.listdir(class_path):
-                img_path = os.path.join(class_path, fname)
+                file_path = os.path.join(class_path, fname)
+                if os.path.isdir(file_path):  # e.g. "saliency" directory
+                    continue
+                img_path = file_path
                 sal_path = os.path.join(class_path, self.saliency_dir, fname)  # 同名ファイルを前提
                 self.samples.append((img_path, sal_path, self.class_to_idx[class_name]))
 

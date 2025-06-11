@@ -68,7 +68,7 @@ def main(args):
 
     model = load_model(args.model, len(class_names), device)
 
-    acc = evaluate(model, loader, device)
+    acc = evaluate(model, loader, device, class_names)
     print(f"Test accuracy: {acc:.4f}")
 
 
