@@ -1,4 +1,6 @@
 import os
+import pickle
+import numpy as np
 import torch
 from typing import Tuple
 from torchvision import transforms, datasets
@@ -88,7 +90,9 @@ class FourChannelImageFolder(Dataset):
                 if os.path.isdir(file_path):  # e.g. "saliency" directory
                     continue
                 img_path = file_path
-                sal_path = os.path.join(class_path, self.saliency_dir, fname)  # 同名ファイルを前提
+                base, _ = os.path.splitext(fname)
+                sal_fname = base + '.pickle'
+                sal_path = os.path.join(class_path, self.saliency_dir, sal_fname)  # 拡張子を .pickle に変更
                 self.samples.append((img_path, sal_path, self.class_to_idx[class_name]))
 
     def __len__(self):
@@ -97,7 +101,9 @@ class FourChannelImageFolder(Dataset):
     def __getitem__(self, idx):
         img_path, sal_path, label = self.samples[idx]
         rgb = Image.open(img_path).convert("RGB")
-        sal = Image.open(sal_path).convert("L")  # 1チャネル
+        with open(sal_path, "rb") as f:
+            sal_array = pickle.load(f)
+        sal = Image.fromarray(sal_array.astype(np.uint8)).convert("L")  # 1チャネル
 
         if self.transform:
             rgb = self.transform(rgb)        # (3, H, W)

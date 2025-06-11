@@ -15,7 +15,7 @@ photo_composition/
 
 ## データセットの準備
 
-トレーニングと検証用のフォルダを以下のように配置します。各クラスフォルダには対応するサリエンシーマップを格納した `saliency/` フォルダを作成し、画像と同名のファイルを置きます。
+トレーニングと検証用のフォルダを以下のように配置します。各クラスフォルダには対応するサリエンシーマップを格納した `saliency/` フォルダを作成し、画像と同名（拡張子は `.pickle`）のファイルを置きます。
 
 ```
 <dataset_root>/
@@ -25,15 +25,15 @@ photo_composition/
       image2.jpg
       ...
       saliency/
-        image1.jpg
-        image2.jpg
+        image1.pickle
+        image2.pickle
         ...
   val/
     <class_name>/
       image3.jpg
       ...
       saliency/
-        image3.jpg
+        image3.pickle
         ...
 ```
 
@@ -59,7 +59,7 @@ python photo_composition/train.py --data-dir <dataset_root> --epochs 10
 
 ```bash
 python photo_composition/predict.py --model composition_model.pth \
-    --image path/to/photo.jpg --saliency path/to/photo_saliency.jpg
+    --image path/to/photo.jpg --saliency path/to/photo_saliency.pickle
 ```
 By default the script reads class names from `composition_model_classes.json`.
 Use `--class-names` to override them.
