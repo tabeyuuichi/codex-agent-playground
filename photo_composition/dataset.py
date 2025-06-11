@@ -38,8 +38,8 @@ def create_dataloaders(data_dir: str, image_size: int = 224, batch_size: int = 3
     class_names = temp.classes
 
     # ImageFolder は、フォルダ名をラベルとして認識する自動ラベリングクラス
-    train_dataset = FourChannelImageFolder(train_dir, transform, class_to_idx)
-    val_dataset = FourChannelImageFolder(val_dir, transform, class_to_idx)
+    train_dataset = FourChannelImageFolder(train_dir, class_to_idx, transform)
+    val_dataset = FourChannelImageFolder(val_dir, class_to_idx, transform)
 
     # DataLoader に変換（バッチ化）
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
@@ -69,7 +69,7 @@ def create_test_loader(data_dir: str, image_size: int = 224, batch_size: int = 3
     class_to_idx = temp.class_to_idx
     class_names = temp.classes
 
-    dataset = FourChannelImageFolder(data_dir, transform, class_to_idx)
+    dataset = FourChannelImageFolder(data_dir, class_to_idx, transform)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     return loader, class_names
 

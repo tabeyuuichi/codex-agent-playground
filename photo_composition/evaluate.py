@@ -17,22 +17,6 @@ def load_model(model_path: Path, num_classes: int, device: torch.device) -> Comp
     model.eval()
     return model
 
-
-# def evaluate(model: CompositionNet, loader: DataLoader, device: torch.device) -> float:
-#     model.eval()
-#     correct = 0
-#     total = 0
-#     with torch.no_grad():
-#         for images, labels in loader:
-#             images = images.to(device)
-#             labels = labels.to(device)
-#             outputs = model(images)
-#             preds = outputs.argmax(dim=1)
-#             correct += (preds == labels).sum().item()
-#             total += labels.size(0)
-#     return correct / total if total > 0 else 0.0
-
-
 def evaluate(model, loader, device, class_names=None):
     all_preds = []
     all_labels = []
