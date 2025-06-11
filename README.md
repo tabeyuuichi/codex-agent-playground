@@ -42,11 +42,10 @@ records the detected class names in `composition_model_classes.json`.
 
 ```
 python photo_composition/predict.py --model composition_model.pth \
-    --image path/to/photo.jpg
+    --image path/to/photo.jpg --saliency path/to/photo_saliency.jpg
 ```
 By default the script reads class names from `composition_model_classes.json`.
 Use `--class-names` to override them.
-codex/save-class-names-to-json-and-update-predict.py
 
 5. Evaluate on a test dataset directory:
 
@@ -57,4 +56,3 @@ python photo_composition/evaluate.py --model composition_model.pth \
 This prints the classification accuracy on the provided dataset. When
 `--class-names` is omitted, the script loads class names from
 `composition_model_classes.json`.
-main
