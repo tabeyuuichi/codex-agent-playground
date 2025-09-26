@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from typing import Tuple
 from torchvision import transforms, datasets
+from torchvision.transforms import InterpolationMode
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from PIL import Image
@@ -37,8 +38,7 @@ def create_dataloaders(
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     sal_transform = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.ToTensor(),
+        transforms.Resize((image_size, image_size), interpolation=InterpolationMode.BILINEAR),
     ])
 
     # クラス一覧取得のため一時的に ImageFolder を使用
@@ -79,8 +79,7 @@ def create_test_loader(
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     sal_transform = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.ToTensor(),
+        transforms.Resize((image_size, image_size), interpolation=InterpolationMode.BILINEAR),
     ])
 
     temp = datasets.ImageFolder(data_dir)
@@ -122,7 +121,15 @@ class FourChannelImageFolder(Dataset):
         rgb = Image.open(img_path).convert("RGB")
         with open(sal_path, "rb") as f:
             sal_array = pickle.load(f)
-        sal = Image.fromarray(sal_array.astype(np.uint8)).convert("L")  # 1チャネル
+
+        if not isinstance(sal_array, np.ndarray):
+            sal_array = np.asarray(sal_array)
+
+        sal = torch.from_numpy(sal_array).float()
+        if sal.ndim == 2:
+            sal = sal.unsqueeze(0)
+        elif sal.ndim == 3 and sal.shape[-1] == 1:
+            sal = sal.permute(2, 0, 1)
 
         if self.rgb_transform:
             rgb = self.rgb_transform(rgb)        # (3, H, W)
