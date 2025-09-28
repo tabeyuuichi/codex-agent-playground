@@ -1,21 +1,30 @@
-# 写真構図推定
+# 写真構図推定リポジトリの使い方
 
-このリポジトリは、写真の構図カテゴリを深層学習で判定するサンプル実装です。PyTorch を用いており、学習済みモデルの作成から評価・推論までを一通り実行できます。
+このリポジトリは、RGB画像と対応するサリエンシーマップを組み合わせて写真の構図カテゴリを推定する PyTorch 製プロジェクトです。`photo_composition` ディレクトリに学習・推論・評価・ユーティリティがまとまっており、カスタムデータセットでのトレーニングから学習済みモデルの解析までを一貫して行えます。
 
-## ディレクトリ構成
+## 主なスクリプトと機能
 
-```
-photo_composition/
-  dataset.py   - データセット読み込みユーティリティ
-  model.py     - ResNet18 ベースの `CompositionNet`
-  train.py     - 学習スクリプト
-  predict.py   - 推論スクリプト
-  evaluate.py  - テストデータでの評価スクリプト
-```
+| スクリプト | 用途 |
+| --- | --- |
+| `train.py` | 学習・検証ループの実行および最良モデルの保存 |
+| `predict.py` | 単一画像に対する推論と結果の表示 |
+| `evaluate.py` | テストデータに対する精度評価と分類レポートの出力 |
+| `dataset.py` | RGB+サリエンシー4チャネル入力用のデータローダ定義 |
+| `model.py` | ResNet18 を拡張した `CompositionNet` のモデル定義 |
+| `show_weights.py` | 学習済み重みを読み込んで全パラメータを表示する CLI ユーティリティ |
 
-## データセットの準備
+## 必要環境
 
-トレーニングと検証用のフォルダを以下のように配置します。各クラスフォルダには対応するサリエンシーマップを格納した `saliency/` フォルダを作成し、画像と同名（拡張子は `.pickle`）のファイルを置きます。
+- Python 3.8 以上
+- PyTorch / torchvision
+- scikit-learn（`classification_report` を使用）
+- Pillow, numpy などの補助ライブラリ
+
+プロジェクト直下に `requirements.txt` がある場合は `pip install -r requirements.txt` でまとめて導入してください。
+
+## データセットの構造
+
+サリエンシーマップ（`.pickle`）を画像と同名ファイルとして `saliency/` フォルダに配置します。学習・検証・テストで同じ構造を使用します。
 
 ```
 <dataset_root>/
@@ -30,56 +39,77 @@ photo_composition/
         ...
   val/
     <class_name>/
-      image3.jpg
       ...
       saliency/
-        image3.pickle
+        ...
+  test/
+    <class_name>/
+      ...
+      saliency/
         ...
 ```
 
-## 依存関係
+サリエンシーマップの値域は学習時と推論時で一致させてください（例: 0〜255 の `uint8` か 0〜1 の `float`）。
 
-Python 3.8 以降と以下のライブラリを使用します。
-
-- PyTorch
-- torchvision
-- scikit-learn (評価レポート用)
-
-その他のライブラリは `requirements.txt` などを参照してください。
-
-## 学習
+## 学習の実行
 
 ```bash
-python photo_composition/train.py --data-dir <dataset_root> --epochs 10
+python photo_composition/train.py \
+    --data-dir <dataset_root> \
+    --epochs 20 \
+    --batch-size 32 \
+    --lr 1e-4
 ```
 
-学習後、最も精度の高いモデルが `composition_model.pth` として保存され、クラス名一覧が `composition_model_classes.json` に記録されます。
+- 最良エポックの重みが `composition_model.pth` として保存されます。
+- 同時にクラス名のリストが `composition_model_classes.json` に出力されます。
+- モデルは RGB+サリエンシーの4チャネル入力を受け付けるよう、ResNet18 の1層目を拡張しています。
 
 ## 推論
 
-```bash
-python photo_composition/predict.py --model composition_model.pth \
-    --image path/to/photo.jpg --saliency path/to/photo_saliency.pickle
-```
-By default the script reads class names from `composition_model_classes.json`.
-Use `--class-names` to override them.
+単一画像で推論する際は RGB 画像とサリエンシーマップを指定します。
 
-`--class-names` を指定しない場合は、モデルファイル名に対応する `<model>_classes.json` が読み込まれます。RGB 画像とサリエンシーマップを組み合わせた 4 チャネル入力で推論を行います。
+```bash
+python photo_composition/predict.py \
+    --model composition_model.pth \
+    --image path/to/image.jpg \
+    --saliency path/to/image_saliency.pickle
+```
+
+- `--class-names` を指定しない場合、モデルファイル名に対応する `<model>_classes.json` を自動で読み込みます。
+- 出力にはクラスごとのスコアと予測ラベルが含まれます。
 
 ## 評価
 
+テストデータ全体の性能を測定します。
+
 ```bash
-python photo_composition/evaluate.py --model composition_model.pth \
+python photo_composition/evaluate.py \
+    --model composition_model.pth \
     --data-dir path/to/test_dataset
 ```
 
-テストデータ一式を与えると、各クラスごとの精度と全体の精度を表示します。こちらも `--class-names` でクラス名を上書きできます。
+- 精度・適合率・再現率などの指標が表示されます。
+- `--class-names` でクラス一覧を外部ファイルから読み込むことができます。
 
-## モデルのカスタマイズ
+## 重みの確認
 
-`model.py` の `CompositionNet` は ResNet18 をベースにしています。必要に応じて層構成やハイパーパラメータを変更してみてください。
+学習済みモデルの各パラメータを確認するには `show_weights.py` を使用します。
 
-=======
-This prints the classification accuracy on the provided dataset. When
-`--class-names` is omitted, the script loads class names from
-`composition_model_classes.json`.
+```bash
+python photo_composition/show_weights.py \
+    --model composition_model.pth \
+    --classes composition_model_classes.json
+```
+
+ファイルパスを省略した場合は同ディレクトリ内の既定ファイルを参照します。大規模モデルの場合は出力が膨大になるため、`grep` やリダイレクトでの絞り込みを推奨します。
+
+## カスタマイズのヒント
+
+- `model.py` の `CompositionNet` を変更して ResNet の層構成やヘッドを差し替えられます。
+- `dataset.py` の前処理（リサイズ、正規化、サリエンシーマップのスケーリングなど）を調整することで性能に影響を与えられます。
+- `train.py` 内のハイパーパラメータ（学習率、オプティマイザ、スケジューラ）も適宜編集してください。
+
+## ライセンス
+
+本リポジトリは `LICENSE` ファイルに記載された条件に従います。
